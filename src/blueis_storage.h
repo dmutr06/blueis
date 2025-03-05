@@ -69,8 +69,8 @@ void blueis_table_init(BlueisTable *table);
 void blueis_table_deinit(BlueisTable *table);
 size_t blueis_hash_value(BlueisValue value); 
 bool blueis_value_compare(const BlueisValue *a, const BlueisValue *b);
-void blueis_table_insert(BlueisTable *table, BlueisValue key, BlueisValue value);
-BlueisValue *blueis_table_get(BlueisTable *table, BlueisValue key);
+BlueisValue blueis_table_insert(BlueisTable *table, BlueisValue key, BlueisValue value);
+BlueisValue blueis_table_get(BlueisTable *table, BlueisValue key);
 BlueisValue blueis_table_delete(BlueisTable *table, BlueisValue key);
 
 BlueisValue blueis_init_nil(void *value);

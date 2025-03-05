@@ -65,7 +65,7 @@ bool blueis_value_compare(const BlueisValue *a, const BlueisValue *b) {
 }
 
 
-void blueis_table_internal_insert(BlueisTable *table, BlueisValue key, BlueisValue value) {
+BlueisValue blueis_table_internal_insert(BlueisTable *table, BlueisValue key, BlueisValue value) {
   size_t index = hash(key);
 
   for (size_t i = 0; i < table->capacity; i++) {
@@ -74,6 +74,7 @@ void blueis_table_internal_insert(BlueisTable *table, BlueisValue key, BlueisVal
     if (cur->state == BLUEIS_PAIR_EMPTY || cur->state == BLUEIS_PAIR_DELETED) {
       if (cur->state == BLUEIS_PAIR_DELETED) {
         blueis_free_if_string(&cur->key);
+        blueis_free_if_string(&cur->value);
       }
       cur->state = BLUEIS_PAIR_OCCUPIED;
       cur->key = key;
@@ -81,13 +82,15 @@ void blueis_table_internal_insert(BlueisTable *table, BlueisValue key, BlueisVal
       cur->value = value;
       blueis_copy_if_string(&cur->value);
       table->count += 1;
-      return;
+      return cur->value;
     }
     if (cur->state == BLUEIS_PAIR_OCCUPIED && blueis_value_compare(&cur->key, &key)) {
       cur->value = value;
-      return;
+      return cur->value;
     }
   }
+
+  return TO_BLUEIS_VALUE(NULL);
 }
 
 void blueis_table_resize(BlueisTable *table, size_t new_capacity) {
@@ -108,14 +111,14 @@ void blueis_table_resize(BlueisTable *table, size_t new_capacity) {
   free(old_pairs);
 }
 
-void blueis_table_insert(BlueisTable *table, BlueisValue key, BlueisValue value) {
+BlueisValue blueis_table_insert(BlueisTable *table, BlueisValue key, BlueisValue value) {
   if (table->count >= table->capacity * BLUEIS_TABLE_LOAD_FACTOR)
     blueis_table_resize(table, table->capacity * 2);
   
-  blueis_table_internal_insert(table, key, value);
+  return blueis_table_internal_insert(table, key, value);
 }
 
-BlueisValue *blueis_table_get(BlueisTable *table, BlueisValue key) {
+BlueisValue blueis_table_get(BlueisTable *table, BlueisValue key) {
   size_t index = hash(key);
 
   for (size_t i = 0; i < table->capacity; i++) {
@@ -124,7 +127,7 @@ BlueisValue *blueis_table_get(BlueisTable *table, BlueisValue key) {
     if (table->pairs[probe].state == BLUEIS_PAIR_OCCUPIED) {
       if (table->pairs[probe].key.kind != key.kind) continue;
       if (blueis_value_compare(&table->pairs[probe].key, &key)) {
-        return &table->pairs[probe].value;
+        return table->pairs[probe].value;
       }
     }
     if (
@@ -133,7 +136,7 @@ BlueisValue *blueis_table_get(BlueisTable *table, BlueisValue key) {
     ) break;
   }
 
-  return NULL;
+  return TO_BLUEIS_VALUE(NULL);
 }
 
 BlueisValue blueis_table_delete(BlueisTable *table, BlueisValue key) {
@@ -141,14 +144,14 @@ BlueisValue blueis_table_delete(BlueisTable *table, BlueisValue key) {
 
   for (size_t i = 0; i < table->capacity; i++) {
     size_t probe = (index + i) & (table->capacity - 1);
-    if (table->pairs[probe].state == BLUEIS_PAIR_EMPTY) continue;
-    if (table->pairs[probe].state == BLUEIS_PAIR_OCCUPIED) {
-      if (table->pairs[probe].key.kind != key.kind) continue;
-      if (blueis_value_compare(&table->pairs[probe].key, &key)) {
-        BlueisValue value = table->pairs[probe].value;
-        table->pairs[probe].state = BLUEIS_PAIR_DELETED;
+    BlueisPair *cur = &table->pairs[probe];
+    if (cur->state == BLUEIS_PAIR_EMPTY) continue;
+    if (cur->state == BLUEIS_PAIR_OCCUPIED) {
+      if (cur->key.kind != key.kind) continue;
+      if (blueis_value_compare(&cur->key, &key)) {
+        cur->state = BLUEIS_PAIR_DELETED;
         table->count -= 1;
-        return value;
+        return cur->value;
       }
     }
   }

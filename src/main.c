@@ -10,10 +10,10 @@ void print_blueis_value(BlueisValue value) {
       printf("%g", value.as.number);
       break;
     case BLUEIS_VALUE_STRING:
-      printf("%s", value.as.string);
+      printf("\"%s\"", value.as.string);
       break;
     case BLUEIS_VALUE_NIL:
-      printf("Nil");
+      printf("NIL");
       break;
     default:
       break;
@@ -35,10 +35,16 @@ int main() {
       break;
     }
 
-    BlueisValue res = blueis_execute_cmd(&table, buf);
-    print_blueis_value(res);
+    BlueisResult res = blueis_execute_cmd(&table, buf);
+
+    if (res.status == BLUEIS_ERROR) {
+      printf("ERROR\n");
+      continue;
+    }
+
+    printf("OK ");
+    print_blueis_value(res.value);
     printf("\n");
-    blueis_free_if_string(&res);
   }
 
   blueis_table_deinit(&table);

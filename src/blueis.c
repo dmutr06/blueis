@@ -31,6 +31,11 @@ typedef struct {
   size_t cur;
 } BlueisLexer;
 
+typedef struct {
+  BlueisLexer lexer;
+  BlueisToken cur_token;
+} BlueisParser;
+
 void blueis_lexer_init(BlueisLexer *lexer, const char *src) {
   lexer->src = src;
   lexer->length = strlen(src);
@@ -77,8 +82,10 @@ BlueisToken blueis_scan_token(BlueisLexer *lexer) {
     return token;
   }
 
-  if (isdigit(c)) {
+  if (isdigit(c) || c == '-') {
     token.type = TOKEN_NUMBER;
+    token.length += 1;
+    blueis_lexer_advance(lexer);
     bool has_dot = false;
     while (isdigit(blueis_lexer_peek(lexer)) || blueis_lexer_peek(lexer) == '.') {
       if (blueis_lexer_peek(lexer) == '.') {
@@ -123,33 +130,6 @@ BlueisToken blueis_scan_token(BlueisLexer *lexer) {
   return token;
 }
 
-typedef enum {
-  BLUEIS_GET_OP,
-  BLUEIS_SET_OP,
-  BLUEIS_DELETE_OP,
-  BLUEIS_INVALID_OP
-} BlueisOpKind;
-
-typedef struct {
-  BlueisOpKind kind;
-  union {
-    struct {
-      BlueisValue key;
-    } get;
-    struct {
-      BlueisValue key;
-      BlueisValue value;
-    } set;
-    struct {
-      BlueisValue key;
-    } delete;
-  };
-} BlueisOp;
-
-typedef struct {
-  BlueisLexer lexer;
-  BlueisToken cur_token;
-} BlueisParser;
 
 void blueis_parser_init(BlueisParser *parser, const char *src) {
   blueis_lexer_init(&parser->lexer, src);
@@ -203,50 +183,40 @@ void blueis_parse_op(BlueisParser *parser, BlueisOp *op) {
   parser->cur_token = blueis_scan_token(&parser->lexer);
 }
 
-BlueisValue blueis_execute_op(BlueisTable *table, BlueisOp op) {
+BlueisResult blueis_execute_op(BlueisTable *table, BlueisOp op) {
   switch (op.kind) {
     case BLUEIS_GET_OP: {
-      BlueisValue *result = blueis_table_get(table, op.get.key);
-      if (result)
-        return *result;
-      return TO_BLUEIS_VALUE(NULL);
+      BlueisValue val = blueis_table_get(table, op.get.key);
+      return (BlueisResult){ .status = BLUEIS_OK, .value = val };
     }
-    case BLUEIS_SET_OP:
-      blueis_table_insert(table, op.set.key, op.set.value);
-      return op.set.value;
+    case BLUEIS_SET_OP: {
+      BlueisValue val = blueis_table_insert(table, op.set.key, op.set.value);
+      return (BlueisResult){ .status = BLUEIS_OK, .value = val };
+    }
     case BLUEIS_DELETE_OP: {
-      return blueis_table_delete(table, op.delete.key);
+      BlueisValue val = blueis_table_delete(table, op.delete.key);
+      return (BlueisResult){ .status = BLUEIS_OK, .value = val };
     }
     default:
-      return TO_BLUEIS_VALUE(NULL);
+      return (BlueisResult) {
+        .status = BLUEIS_ERROR,
+        .value = TO_BLUEIS_VALUE(NULL)
+      };
   }
 }
 
-void blueis_free_op(BlueisOp *op) {
-  switch (op->kind) {
-    case BLUEIS_GET_OP:
-    case BLUEIS_DELETE_OP:
-    case BLUEIS_SET_OP:
-      blueis_free_if_string(&op->get.key);
-      break;
-    default:
-      break;
-  }
-}
-
-
-// TODO: return status with value
-BlueisValue blueis_execute_cmd(BlueisTable *table, const char *cmd) {
+BlueisOp blueis_op_from_cmd(const char *cmd) {
   BlueisOp op;
   BlueisParser parser;
 
   blueis_parser_init(&parser, cmd);
   blueis_parse_op(&parser, &op);
 
-  BlueisValue res = blueis_execute_op(table, op);
-  blueis_copy_if_string(&res);
+  return op;
+}
 
-  blueis_free_op(&op);
 
-  return res;
+BlueisResult blueis_execute_cmd(BlueisTable *table, const char *cmd) {
+  BlueisOp op = blueis_op_from_cmd(cmd);
+  return blueis_execute_op(table, op);
 }
