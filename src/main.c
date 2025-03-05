@@ -1,7 +1,14 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#include "blueis_storage.h"
+#include "blueis.h"
+
+void add_to_table(BlueisTable *table) {
+  BlueisValue key = TO_BLUEIS_VALUE("Hello");
+  BlueisValue value = TO_BLUEIS_VALUE("World");
+
+  blueis_table_insert(table, key, value);
+}
 
 void print_blueis_value(BlueisValue value) {
   switch (value.kind) {
@@ -19,38 +26,19 @@ void print_blueis_value(BlueisValue value) {
   }
 }
 
-void add_to_table(BlueisTable *table) {
-  float a = 12;
-  BlueisValue key = TO_BLUEIS_VALUE("Hello");
-  BlueisValue value = TO_BLUEIS_VALUE(a);
-
-  blueis_table_insert(table, key, value);
-}
-
 int main() {
   BlueisTable table;
   blueis_table_init(&table);
 
   add_to_table(&table);
 
-  BlueisValue deleted = blueis_table_delete(&table, TO_BLUEIS_VALUE("Hello"));
-
-  printf("Deleted ");
-  print_blueis_value(deleted);
-  printf("\n");;
-  blueis_free_if_string(&deleted);
-
-  blueis_table_insert(&table, TO_BLUEIS_VALUE("Hello"), TO_BLUEIS_VALUE("World"));
-
-  BlueisValue *result = blueis_table_get(&table, TO_BLUEIS_VALUE("Hello"));
-
-  if (result) {
-    printf("Found ");
-    print_blueis_value(*result);
-    printf("\n");;
-  } else {
-    printf("Nil\n");
-  }
+  BlueisValue get_res = blueis_execute_cmd(&table, "GET \"Hello\"");
+  BlueisValue set_res = blueis_execute_cmd(&table, "SET \"Hello\" \"it works\"");
+  
+  print_blueis_value(get_res);
+  printf("\n");
+  print_blueis_value(set_res);
+  printf("\n");
 
   blueis_table_deinit(&table);
   return 0;

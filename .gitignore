@@ -1,2 +1,4 @@
 obj
 blueis
+compile_commands.json
+.cache
