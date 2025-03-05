@@ -56,6 +56,9 @@ void blueis_lexer_skip_whitespace(BlueisLexer *lexer) {
   }
 }
 
+
+// TODO: implement a proper lexer
+
 BlueisToken blueis_scan_token(BlueisLexer *lexer) {
   blueis_lexer_skip_whitespace(lexer);
   
@@ -152,12 +155,13 @@ BlueisValue blueis_value_from_token(BlueisToken token) {
 }
 
 void blueis_parse_op(BlueisParser *parser, BlueisOp *op) {
+  op->kind = BLUEIS_INVALID_OP;
   switch (parser->cur_token.type) {
     case TOKEN_GET:
     case TOKEN_DELETE: {
       BlueisToken key_token = blueis_scan_token(&parser->lexer);
       if (key_token.type == TOKEN_STRING || key_token.type == TOKEN_NUMBER) {
-        op->kind = parser->cur_token.type == TOKEN_GET ? BLUEIS_GET_OP : BLUEIS_DELETE_OP;
+        op->kind = (parser->cur_token.type == TOKEN_GET) ? BLUEIS_GET_OP : BLUEIS_DELETE_OP;
         op->get.key = blueis_value_from_token(key_token);
       }
       break;
@@ -214,7 +218,6 @@ BlueisOp blueis_op_from_cmd(const char *cmd) {
 
   return op;
 }
-
 
 BlueisResult blueis_execute_cmd(BlueisTable *table, const char *cmd) {
   BlueisOp op = blueis_op_from_cmd(cmd);

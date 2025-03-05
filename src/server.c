@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
   blueis_table_init(&table);
 
   int sfd = socket(AF_INET, SOCK_STREAM, 0);
-  if (sfd == -1) {
+  if (sfd < 0) {
     perror("socket");
     return 1;
   }
@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
   addr.sin_port = htons(port);
   addr.sin_addr.s_addr = INADDR_ANY;
 
-  if (bind(sfd, (struct sockaddr *)&addr, sizeof(addr)) < -1) {
+  if (bind(sfd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
     perror("bind");
     return 1;
   }
@@ -123,7 +123,7 @@ int main(int argc, char **argv) {
         }
       } else {
         int cfd = events[i].data.fd;
-        char buf[1024];
+        char buf[1024] = {0};
         int n = read(cfd, buf, sizeof(buf));
         if (n < 0) {
           perror("read");
@@ -152,7 +152,6 @@ int main(int argc, char **argv) {
       }
     }
   }
-
 
   return 0;
 }
