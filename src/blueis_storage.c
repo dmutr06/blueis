@@ -127,6 +127,10 @@ BlueisValue *blueis_table_get(BlueisTable *table, BlueisValue key) {
         return &table->pairs[probe].value;
       }
     }
+    if (
+      table->pairs[probe].state == BLUEIS_PAIR_DELETED &&
+      blueis_value_compare(&table->pairs[probe].key, &key)
+    ) break;
   }
 
   return NULL;

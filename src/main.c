@@ -2,6 +2,7 @@
 #include <stdbool.h>
 
 #include "blueis.h"
+#include "blueis_storage.h"
 
 void print_blueis_value(BlueisValue value) {
   switch (value.kind) {
@@ -37,6 +38,7 @@ int main() {
     BlueisValue res = blueis_execute_cmd(&table, buf);
     print_blueis_value(res);
     printf("\n");
+    blueis_free_if_string(&res);
   }
 
   blueis_table_deinit(&table);

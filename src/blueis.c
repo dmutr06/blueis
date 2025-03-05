@@ -159,7 +159,9 @@ void blueis_parser_init(BlueisParser *parser, const char *src) {
 BlueisValue blueis_value_from_token(BlueisToken token) {
   if (token.type == TOKEN_NUMBER) {
     double number = 0;
-    sscanf(token.start, "%lf", &number);
+    char buf[64] = {0};
+    strncpy(buf, token.start, token.length > 63 ? 63 : token.length);
+    sscanf(buf, "%lf", &number);
     return TO_BLUEIS_VALUE(number);
   } else if (token.type == TOKEN_STRING) {
     char *buf = strndup(token.start, token.length);
@@ -232,6 +234,8 @@ void blueis_free_op(BlueisOp *op) {
   }
 }
 
+
+// TODO: return status with value
 BlueisValue blueis_execute_cmd(BlueisTable *table, const char *cmd) {
   BlueisOp op;
   BlueisParser parser;
@@ -240,6 +244,7 @@ BlueisValue blueis_execute_cmd(BlueisTable *table, const char *cmd) {
   blueis_parse_op(&parser, &op);
 
   BlueisValue res = blueis_execute_op(table, op);
+  blueis_copy_if_string(&res);
 
   blueis_free_op(&op);
 

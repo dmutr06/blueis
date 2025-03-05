@@ -78,4 +78,5 @@ BlueisValue blueis_init_number(double value);
 BlueisValue blueis_init_string(char *value);
 
 void blueis_free_if_string(BlueisValue *value);
+void blueis_copy_if_string(BlueisValue *value);
 #endif // __BLUEIS_STORAGE_H__
