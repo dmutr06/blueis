@@ -9,8 +9,12 @@
 #include <sys/epoll.h>
 
 #include "blueis.h"
+#include "blueis_auth.h"
+#include "blueis_storage.h"
 
 #define MAX_EVENTS 10
+
+#define PASSWORD "supersecret"
 
 int setnonblocking(int fd) {
   int flags = fcntl(fd, F_GETFL, 0);
@@ -35,6 +39,9 @@ int main(int argc, char **argv) {
 
   BlueisTable table;
   blueis_table_init(&table);
+
+  BlueisTable auth_table;
+  blueis_table_init(&auth_table);
 
   int sfd = socket(AF_INET, SOCK_STREAM, 0);
   if (sfd < 0) {
@@ -121,6 +128,26 @@ int main(int argc, char **argv) {
         }
 
         buf[n] = '\0';
+
+        if (!blueis_is_authed(&auth_table, cfd)) {
+          char password[64];
+          if(!blueis_parse_auth_cmd(buf, password, sizeof(password))) {
+            write(cfd, "ERROR\n", 6);
+            close(cfd);
+            continue;
+          }
+
+          if (strcmp(password, PASSWORD) != 0) {
+            write(cfd, "ERROR\n", 6);
+            close(cfd);
+            continue;
+          }
+
+          blueis_auth(&auth_table, cfd);
+          write(cfd, "OK NIL\n", 7);
+          continue;
+        }
+
         BlueisResult res = blueis_execute_cmd(&table, buf);
 
         if (res.status == BLUEIS_ERROR) {

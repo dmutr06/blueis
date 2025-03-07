@@ -8,8 +8,8 @@ all: $(OBJDIR) blueis blueis_server client_example
 blueis: $(OBJDIR)/main.o $(OBJDIR)/blueis_storage.o $(OBJDIR)/blueis.o
 	gcc -o blueis $(OBJDIR)/main.o $(OBJDIR)/blueis_storage.o $(OBJDIR)/blueis.o
 
-blueis_server: $(OBJDIR)/blueis_server.o $(OBJDIR)/blueis_storage.o $(OBJDIR)/blueis.o
-	gcc -o blueis_server $(OBJDIR)/blueis_server.o $(OBJDIR)/blueis_storage.o $(OBJDIR)/blueis.o
+blueis_server: $(OBJDIR)/blueis_server.o $(OBJDIR)/blueis_storage.o $(OBJDIR)/blueis.o $(OBJDIR)/blueis_auth.o
+	gcc -o blueis_server $(OBJDIR)/blueis_server.o $(OBJDIR)/blueis_storage.o $(OBJDIR)/blueis.o $(OBJDIR)/blueis_auth.o
 
 client_example: $(OBJDIR)/client_example.o $(OBJDIR)/blueis_client.o $(OBJDIR)/blueis.o $(OBJDIR)/blueis_storage.o
 	gcc -o client_example $(OBJDIR)/client_example.o $(OBJDIR)/blueis_storage.o $(OBJDIR)/blueis_client.o $(OBJDIR)/blueis.o
@@ -31,6 +31,9 @@ $(OBJDIR)/client_example.o: $(SRCDIR)/client_example.c
 
 $(OBJDIR)/blueis.o: $(SRCDIR)/blueis.c $(SRCDIR)/blueis.h
 	$(CC) $(CFLAGS) -c $(SRCDIR)/blueis.c -o $(OBJDIR)/blueis.o
+
+$(OBJDIR)/blueis_auth.o: $(SRCDIR)/blueis_auth.c $(SRCDIR)/blueis_auth.h
+	$(CC) $(CFLAGS) -c $(SRCDIR)/blueis_auth.c -o $(OBJDIR)/blueis_auth.o
 
 $(OBJDIR):
 	@mkdir -p $(OBJDIR)

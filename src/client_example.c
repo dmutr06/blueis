@@ -1,4 +1,5 @@
 #include "blueis_client.h"
+#include "blueis_storage.h"
 #include <stdio.h>
 
 int main(int argc, char **argv) {
@@ -17,7 +18,7 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  BlueisResult res = blueis_client_get(&client, TO_BLUEIS_VALUE("foo"));
+  BlueisResult res = blueis_client_get(&client, TO_BLUEIS_VALUE("FOO"));
 
   if (res.status == BLUEIS_ERROR) {
     fprintf(stderr, "Failed to send GET request\n");
@@ -39,6 +40,8 @@ int main(int argc, char **argv) {
     default:
       printf("Got unknown value\n");
   }
+
+  blueis_free_if_string(&val);
 
   blueis_client_close(&client);
 
