@@ -1,5 +1,6 @@
 obj
 blueis
-server
+blueis_server
+client_example
 compile_commands.json
 .cache

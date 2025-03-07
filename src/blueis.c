@@ -36,6 +36,21 @@ typedef struct {
   BlueisToken cur_token;
 } BlueisParser;
 
+int str_append_blueis_value(char *buf, size_t buf_size, BlueisValue value) {
+  size_t len = strlen(buf);
+
+  switch (value.kind) {
+    case BLUEIS_VALUE_NUMBER:
+      return snprintf(buf + len, buf_size - len, "%g", value.as.number);
+    case BLUEIS_VALUE_STRING:
+      return snprintf(buf + len, buf_size - len, "\"%s\"", value.as.string);
+    case BLUEIS_VALUE_NIL:
+      return snprintf(buf + len, buf_size - len, "NIL");
+  }
+
+  return 0;
+}
+
 void blueis_lexer_init(BlueisLexer *lexer, const char *src) {
   lexer->src = src;
   lexer->length = strlen(src);
@@ -55,7 +70,6 @@ void blueis_lexer_skip_whitespace(BlueisLexer *lexer) {
     blueis_lexer_advance(lexer);
   }
 }
-
 
 // TODO: implement a proper lexer
 
@@ -222,4 +236,54 @@ BlueisOp blueis_op_from_cmd(const char *cmd) {
 BlueisResult blueis_execute_cmd(BlueisTable *table, const char *cmd) {
   BlueisOp op = blueis_op_from_cmd(cmd);
   return blueis_execute_op(table, op);
+}
+
+bool blueis_op_to_cmd(BlueisOp op, char *cmd, size_t len) {
+  if (op.kind == BLUEIS_INVALID_OP) {
+    *cmd = '\0';
+    return false;
+  }
+
+  switch (op.kind) {
+    case BLUEIS_GET_OP:
+      snprintf(cmd, len, "GET ");
+      str_append_blueis_value(cmd, len - 4, op.get.key);
+      break;
+    case BLUEIS_SET_OP:
+      snprintf(cmd, len, "SET ");
+      size_t n = str_append_blueis_value(cmd, len, op.set.key);
+      snprintf(cmd + n + 4, len - 4 - n , " ");
+      str_append_blueis_value(cmd, len, op.set.value);
+      break;
+    case BLUEIS_DELETE_OP:
+      snprintf(cmd, len, "DELETE ");
+      str_append_blueis_value(cmd, len, op.delete.key);
+      break;
+    default:
+      *cmd = '\0';
+      return false;
+  }
+
+  return true;
+}
+
+BlueisOp blueis_op_get(BlueisValue key) {
+  return (BlueisOp) {
+    .kind = BLUEIS_GET_OP,
+    .get = { .key = key }
+  };
+}
+
+BlueisOp blueis_op_set(BlueisValue key, BlueisValue value) {
+  return (BlueisOp) {
+    .kind = BLUEIS_SET_OP,
+    .set = { .key = key, .value = value }
+  };
+}
+
+BlueisOp blueis_op_delete(BlueisValue key) {
+  return (BlueisOp) {
+    .kind = BLUEIS_DELETE_OP,
+    .delete = { .key = key }
+  };
 }

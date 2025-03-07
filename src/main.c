@@ -23,6 +23,11 @@ void print_blueis_value(BlueisValue value) {
 int main() {
   BlueisTable table;
   blueis_table_init(&table);
+  
+  BlueisOp op = blueis_op_set(TO_BLUEIS_VALUE("foo"), TO_BLUEIS_VALUE("bar"));
+  char cmd[1024];
+  blueis_op_to_cmd(op, cmd, sizeof(cmd));
+  blueis_execute_cmd(&table, cmd);
 
   char buf[1024];
   while (1) {

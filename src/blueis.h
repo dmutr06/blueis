@@ -37,8 +37,16 @@ typedef struct {
   const BlueisValue value;
 } BlueisResult;
 
+int str_append_blueis_value(char *buf, size_t buf_size, BlueisValue value);
+
 BlueisOp blueis_op_from_cmd(const char *cmd);
 BlueisResult blueis_execute_op(BlueisTable *table, BlueisOp op);
 BlueisResult blueis_execute_cmd(BlueisTable *table, const char *cmd);
+
+bool blueis_op_to_cmd(BlueisOp op, char *cmd, size_t len);
+
+BlueisOp blueis_op_get(BlueisValue key);
+BlueisOp blueis_op_set(BlueisValue key, BlueisValue value);
+BlueisOp blueis_op_delete(BlueisValue key);
 
 #endif // __BLUEIS_H__

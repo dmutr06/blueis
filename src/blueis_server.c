@@ -12,21 +12,6 @@
 
 #define MAX_EVENTS 10
 
-int str_append_blueis_value(char *buf, size_t buf_size, BlueisValue value) {
-  size_t len = strlen(buf);
-
-  switch (value.kind) {
-    case BLUEIS_VALUE_NUMBER:
-      return snprintf(buf + len, buf_size - len, "%g", value.as.number);
-    case BLUEIS_VALUE_STRING:
-      return snprintf(buf + len, buf_size - len, "\"%s\"", value.as.string);
-    case BLUEIS_VALUE_NIL:
-      return snprintf(buf + len, buf_size - len, "NIL");
-  }
-
-  return 0;
-}
-
 int setnonblocking(int fd) {
   int flags = fcntl(fd, F_GETFL, 0);
   if (flags < 0) {
