@@ -19,5 +19,6 @@ BlueisResult blueis_client_get(BlueisClient *client, BlueisValue key);
 BlueisResult blueis_client_set(BlueisClient *client, BlueisValue key, BlueisValue value);
 BlueisResult blueis_client_delete(BlueisClient *client, BlueisValue key);
 
+BlueisResult blueis_client_auth(BlueisClient *client, const char *password);
 
 #endif // __BLUEIS_CLIENT_H__

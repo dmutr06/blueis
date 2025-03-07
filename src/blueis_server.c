@@ -106,7 +106,7 @@ int main(int argc, char **argv) {
           return 1;
         }
 
-        event.events = EPOLLIN | EPOLLET;
+        event.events = EPOLLIN | EPOLLET | EPOLLRDHUP;
         event.data.fd = cfd;
 
         if (epoll_ctl(efd, EPOLL_CTL_ADD, cfd, &event) < 0) {
@@ -114,6 +114,10 @@ int main(int argc, char **argv) {
           return 1;
         }
       } else {
+        if (events[i].events & EPOLLRDHUP) {
+          blueis_unauth(&auth_table, events[i].data.fd);
+          continue;
+        }
         int cfd = events[i].data.fd;
         char buf[1024] = {0};
         int n = read(cfd, buf, sizeof(buf));

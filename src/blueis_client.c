@@ -28,31 +28,7 @@ int blueis_client_connect(BlueisClient *client, const char *host, int port) {
   return 0;
 }
 
-int blueis_client_send_raw(BlueisClient *client, const char *cmd, size_t cmd_len, char *buf, size_t buf_size) {
-  if (write(client->fd, cmd, cmd_len) < 0) {
-    return -1;
-  }
-
-  int n = read(client->fd, buf, buf_size);
-  if (n < 0) {
-    return -1;
-  }
-
-  return n;
-}
-
-BlueisResult blueis_client_send_op(BlueisClient *client, BlueisOp op) {
-  char cmd[1024];
-  if (!blueis_op_to_cmd(op, cmd, sizeof(cmd))) {
-    return (BlueisResult) { .status = BLUEIS_ERROR };
-  }
-
-  char buf[1024];
-
-  int res = blueis_client_send_raw(client, cmd, strlen(cmd), buf, sizeof(buf));
-
-  if (res < 0) return (BlueisResult) { .status = BLUEIS_ERROR };
-
+BlueisResult blueis_result_from_raw(const char *buf) {
   char raw_status[32];
 
   if (sscanf(buf, "%s", raw_status) != 1) {
@@ -80,6 +56,34 @@ BlueisResult blueis_client_send_op(BlueisClient *client, BlueisOp op) {
   return (BlueisResult) { .status = BLUEIS_OK, .value = value };
 }
 
+int blueis_client_send_raw(BlueisClient *client, const char *cmd, size_t cmd_len, char *buf, size_t buf_size) {
+  if (write(client->fd, cmd, cmd_len) < 0) {
+    return -1;
+  }
+
+  int n = read(client->fd, buf, buf_size);
+  if (n < 0) {
+    return -1;
+  }
+
+  return n;
+}
+
+BlueisResult blueis_client_send_op(BlueisClient *client, BlueisOp op) {
+  char cmd[1024];
+  if (!blueis_op_to_cmd(op, cmd, sizeof(cmd))) {
+    return (BlueisResult) { .status = BLUEIS_ERROR };
+  }
+
+  char buf[1024];
+
+  int res = blueis_client_send_raw(client, cmd, strlen(cmd), buf, sizeof(buf));
+
+  if (res < 0) return (BlueisResult) { .status = BLUEIS_ERROR };
+
+  return blueis_result_from_raw(buf);
+}
+
 BlueisResult blueis_client_get(BlueisClient *client, BlueisValue key) {
   BlueisOp op = blueis_op_get(key);
   return blueis_client_send_op(client, op);
@@ -98,3 +102,15 @@ BlueisResult blueis_client_delete(BlueisClient *client, BlueisValue key) {
 void blueis_client_close(BlueisClient *client) {
   close(client->fd);
 }
+
+BlueisResult blueis_client_auth(BlueisClient *client, const char *password) {
+  char cmd[1024] = {0};
+  strcat(cmd, "AUTH ");
+  strcat(cmd, password);
+  char buf[1024];
+  int res = blueis_client_send_raw(client, cmd, sizeof(cmd), buf, sizeof(buf));
+  if (res < 0) return (BlueisResult) { .status = BLUEIS_ERROR };
+
+  return blueis_result_from_raw(buf);
+}
+
